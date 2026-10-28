@@ -1,0 +1,21 @@
+# Зависимости
+node_modules/
+
+# Сборка фронтенда
+dist/
+.vite/
+
+# Сборка Rust / Tauri
+src-tauri/target/
+
+# Локальные файлы
+.env
+.env.local
+.DS_Store
+Thumbs.db
+*.log
+
+# Файлы IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/

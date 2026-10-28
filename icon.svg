@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Темный фон с закругленными углами -->
+  <rect width="1024" height="1024" rx="224" fill="#121212" />
+  
+  <!-- Внешнее фиолетовое кольцо -->
+  <circle cx="512" cy="512" r="350" stroke="#8A2BE2" stroke-width="32" fill="none" opacity="0.3" />
+  
+  <!-- Фиолетовый треугольник (Play) -->
+  <path d="M 420 320 L 760 512 L 420 704 Z" fill="#8A2BE2" />
+  
+  <!-- Маленькая фиолетовая точка (акцент) -->
+  <circle cx="300" cy="512" r="40" fill="#8A2BE2" />
+</svg>
