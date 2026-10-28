@@ -1,5 +1,7 @@
 # Desktop Media Player
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Десктопный медиаплеер на Tauri v2 + React + Rust для Windows. Демонстрирует построение лёгкого нативного приложения с потоковым воспроизведением аудио, дисковым кэшированием, офлайн-режимом и интеграцией с системными API (SMTC, Discord RPC).
 
 ## Стек
