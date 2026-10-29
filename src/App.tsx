@@ -111,7 +111,7 @@ function App() {
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const loadMoreRef = useRef<HTMLDivElement>(null); // Маркер для скролла
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   const scrollPositions = useRef<Record<string, number>>({});
 
   const isVkMixFetchingRef = useRef(false);
@@ -143,40 +143,43 @@ function App() {
     return myTracks.some(t => t.id === track.id && t.owner_id === track.owner_id) || !!addedTracks[`${track.owner_id}_${track.id}`];
   };
 
+  const loadCache = async () => {
+    try {
+      const cachedPaths = await invoke<Record<string, string>>('get_cached_files');
+      if (cachedPaths) {
+        setDownloadedTracks(cachedPaths);
+        localStorage.setItem('downloadedTracks', JSON.stringify(cachedPaths));
+
+        const savedList = localStorage.getItem('cachedTrackList');
+        let parsedList: Track[] = [];
+        if (savedList) {
+          try { parsedList = JSON.parse(savedList); } catch { parsedList = []; }
+        }
+        const validTracks = parsedList.filter(
+          t => t && t.id && t.owner_id && cachedPaths[`${t.owner_id}_${t.id}`] !== undefined
+        );
+        setCachedTracks(validTracks);
+        localStorage.setItem('cachedTrackList', JSON.stringify(validTracks));
+      }
+    } catch (e) {
+      console.error('Ошибка синхронизации кэша:', e);
+    }
+  };
+
   useEffect(() => {
     invoke<boolean>('check_auth').then(async (auth) => {
       if (auth) {
         setIsLoggedIn(true);
         fetchMyMusic(0, true);
         invoke('init_discord').catch(e => console.error(e));
-        
-        try {
-          const cachedPaths = await invoke<Record<string, string>>('get_cached_files');
-          if (cachedPaths) {
-            setDownloadedTracks(cachedPaths);
-            localStorage.setItem('downloadedTracks', JSON.stringify(cachedPaths));
-
-            const savedList = localStorage.getItem('cachedTrackList');
-            let parsedList: Track[] = [];
-            if (savedList) {
-              try { parsedList = JSON.parse(savedList); } catch { parsedList = []; }
-            }
-            
-            const validTracks = parsedList.filter(t => t && t.id && t.owner_id && cachedPaths[`${t.owner_id}_${t.id}`] !== undefined);
-            setCachedTracks(validTracks);
-            localStorage.setItem('cachedTrackList', JSON.stringify(validTracks));
-          }
-        } catch (e) {
-          console.error("Ошибка синхронизации кэша:", e);
-        }
       } else {
         setIsLoggedIn(false);
-        const savedList = localStorage.getItem('cachedTrackList');
-        if (savedList) {
-          try { setCachedTracks(JSON.parse(savedList)); } catch {}
-        }
       }
-    }).catch(() => setIsLoggedIn(false));
+      await loadCache();
+    }).catch(async () => {
+      setIsLoggedIn(false);
+      await loadCache();
+    });
   }, []);
 
   useEffect(() => {
@@ -215,7 +218,6 @@ function App() {
     }
   }, [isLoggedIn]);
 
-  // HEARTBEAT для SMTC (чтобы Windows не забывал про плеер)
   useEffect(() => {
     if (currentTrack) {
       const updateMetadata = () => {
@@ -262,7 +264,6 @@ function App() {
 
   useEffect(() => { if (audioRef.current) audioRef.current.volume = volume; }, [volume]);
 
-  // ИСПОЛЬЗУЕМ INTERSECTION OBSERVER ВМЕСТО ONSCROLL ДЛЯ ЗАГРУЗКИ
   useEffect(() => {
     if (!loadMoreRef.current) return;
     
@@ -276,7 +277,7 @@ function App() {
           }
         }
       },
-      { root: scrollRef.current, rootMargin: '100px' } // Срабатывает за 100px до конца
+      { root: scrollRef.current, rootMargin: '100px' }
     );
     
     observer.observe(loadMoreRef.current);
@@ -543,14 +544,30 @@ function App() {
       setTokenInput('');
       fetchMyMusic(0, true);
       invoke('init_discord').catch(e => console.error(e));
+      await loadCache();
     } catch (error) { setErrorMsg(String(error)); } finally { setIsLoading(false); }
   };
 
-  const handleOfflineLogin = () => {
-    if (cachedTracks.length === 0) {
-      setErrorMsg("Нет скачанных треков для оффлайн-режима.");
+  const handleOfflineLogin = async () => {
+    try {
+      const cachedPaths = await invoke<Record<string, string>>('get_cached_files');
+      if (cachedPaths) {
+        setDownloadedTracks(cachedPaths);
+        localStorage.setItem('downloadedTracks', JSON.stringify(cachedPaths));
+      }
+    } catch (e) {
+      console.error('Ошибка синхронизации кэша:', e);
+    }
+
+    const savedList = localStorage.getItem('cachedTrackList');
+    const parsed: Track[] = savedList ? JSON.parse(savedList) : [];
+
+    if (parsed.length === 0) {
+      setErrorMsg('Нет скачанных треков для оффлайн-режима.');
       return;
     }
+
+    setCachedTracks(parsed);
     setIsOfflineMode(true);
     setIsLoggedIn(true);
     setActiveTab('cached');
@@ -715,7 +732,6 @@ function App() {
           <TrackSkeleton />
         </>
       )}
-      {/* Маркер для IntersectionObserver */}
       <div ref={loadMoreRef} style={{ height: '10px' }}></div>
     </div>
   );
@@ -802,7 +818,7 @@ function App() {
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button className="btn-secondary" onClick={toggleMiniMode} disabled={!currentTrack} style={{ opacity: currentTrack ? 1 : 0.3, cursor: currentTrack ? 'pointer' : 'not-allowed' }}>Мини-плеер</button>
-                <button className="btn-secondary" onClick={() => { setIsLoggedIn(false); setMyTracks([]); setMixTracks([]); setUserPlaylists([]); setCachedTracks([]); setCurrentTrack(null); setIsPlaying(false); closePlaylist(); setIsOfflineMode(false); }}>Выйти</button>
+                <button className="btn-secondary" onClick={() => { setIsLoggedIn(false); setMyTracks([]); setMixTracks([]); setUserPlaylists([]); setCurrentTrack(null); setIsPlaying(false); closePlaylist(); setIsOfflineMode(false); }}>Выйти</button>
               </div>
             </header>
 

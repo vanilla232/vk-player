@@ -51,7 +51,7 @@ body {
 }
 
 .title { font-size: 28px; margin-bottom: 8px; }
-.subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 24px; }
+.subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 24px; text-align: center; }
 .login-form { width: 100%; display: flex; flex-direction: column; gap: 16px; }
 
 .input-field {
@@ -317,7 +317,6 @@ body {
   background: rgba(255,255,255,0.1);
 }
 
-/* Анимация нажатия на кнопки действий (Фикс #6) */
 .icon-btn:active {
   transform: scale(0.8);
   color: var(--accent);
@@ -472,7 +471,6 @@ body {
   right: 0;
   height: 90px;
   background-color: rgba(24, 24, 24, 0.95);
-  /* Убрали blur для оптимизации при играх */
   border-top: 1px solid rgba(255,255,255,0.05);
   display: flex;
   align-items: center;
@@ -535,7 +533,6 @@ body {
 .progress-container { display: flex; align-items: center; width: 100%; gap: 15px; }
 .time { font-size: 12px; color: var(--text-secondary); min-width: 35px; text-align: center; }
 
-/* --- ВОЗВРАЩАЕМ КРАСИВЫЕ ПОЛЗУНКИ --- */
 .progress-bar, .player-volume input[type=range], .mini-volume {
   -webkit-appearance: none;
   appearance: none;
@@ -545,7 +542,6 @@ body {
   transition: width 0.1s, height 0.1s;
 }
 
-/* Горизонтальные ползунки */
 .progress-bar, .player-volume input[type=range] {
   height: 4px;
 }
@@ -556,7 +552,6 @@ body {
 
 .progress-bar { flex: 1; }
 
-/* Бегунки для всех ползунков */
 .progress-bar::-webkit-slider-thumb, 
 .player-volume input[type=range]::-webkit-slider-thumb,
 .mini-volume::-webkit-slider-thumb {
@@ -568,7 +563,7 @@ body {
   background: #fff;
   cursor: pointer;
   transition: transform 0.1s ease, opacity 0.2s;
-  opacity: 0; /* Скрыт, пока не навели */
+  opacity: 0;
   box-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
 
@@ -584,13 +579,11 @@ body {
 .player-volume input[type=range] { width: 90px; }
 .player-icon-btn { opacity: 1; padding: 0; }
 
-/* Скроллбар */
 .content-area::-webkit-scrollbar { width: 8px; }
 .content-area::-webkit-scrollbar-track { background: transparent; }
 .content-area::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
 .content-area::-webkit-scrollbar-thumb:hover { background: #555; }
 
-/* --- Мини-плеер (Оптимизирован) --- */
 .mini-player {
   display: flex;
   flex-direction: column;
@@ -604,21 +597,19 @@ body {
   padding: 15px;
   overflow: hidden;
   -webkit-app-region: drag; 
-  will-change: transform; /* Оптимизация под игры */
+  will-change: transform;
 }
 
 .mini-controls, .mini-bottom, button, input[type=range] { 
   -webkit-app-region: no-drag; 
 }
 
-/* Обложка теперь растягивается и забирает пустоту */
 .mini-cover {
   width: 100%;
   flex: 1;
   min-height: 0;
   border-radius: 10px;
   overflow: hidden;
-  /* Убрали тяжелую тень для оптимизации */
   margin-bottom: 10px;
   pointer-events: none;
   background-color: #222;
@@ -707,7 +698,6 @@ body {
   transform: scale(1.1); 
 }
 
-/* Нижняя панель (прогресс и громкость) */
 .mini-bottom {
   display: flex;
   align-items: flex-end;
@@ -718,7 +708,6 @@ body {
   padding-bottom: 5px;
 }
 
-/* Прогресс-бар */
 .mini-progress-wrapper { 
   display: flex; 
   align-items: flex-end; 
@@ -744,7 +733,6 @@ body {
   margin-bottom: 2px;
 }
 
-/* Блок громкости */
 .mini-volume-wrapper {
   display: flex;
   align-items: flex-end;
@@ -759,7 +747,6 @@ body {
   margin-bottom: 4px;
 }
 
-/* Вертикальный ползунок в мини-плеере */
 .mini-volume {
   writing-mode: vertical-lr;
   direction: rtl;
@@ -773,7 +760,6 @@ body {
   width: 6px; 
 }
 
-/* Убираем стандартные стрелки ввода */
 input[type=range]::-webkit-slider-runnable-track {
   background: transparent;
 }

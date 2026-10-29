@@ -285,7 +285,10 @@ async fn check_auth(app: tauri::AppHandle) -> bool {
 async fn save_token(app: tauri::AppHandle, token: String) -> Result<(), String> {
     let token = token.trim().to_string();
     let client = reqwest::Client::builder().user_agent("Mozilla/5.0").build().map_err(|e| e.to_string())?;
-    let res = client.get("https://api.vk.com/method/users.get").query(&[("access_token", token.as_str()), ("v", "5.131")]).send().await.map_err(|e| e.to_string())?;
+    
+    tokio::time::sleep(tokio::time::Duration::from_millis(350)).await;
+    
+    let res = client.get("https://api.vk.com/method/users.get").query(&[("access_token", token.as_str()), ("v", "5.199")]).send().await.map_err(|e| e.to_string())?;
     let json: Value = res.json().await.map_err(|e| e.to_string())?;
     if json.get("error").is_some() { return Err("Неверный токен".to_string()); }
     let _ = app.keyring().initialize_service("com.vkplayer.app".to_string());
@@ -298,7 +301,10 @@ async fn search_music(app: tauri::AppHandle, query: String, offset: i32) -> Resu
     let _ = app.keyring().initialize_service("com.vkplayer.app".to_string());
     let token = match app.keyring().get("vk_access_token", tauri_plugin_keyring::CredentialType::Password) { Ok(tauri_plugin_keyring::CredentialValue::Password(t)) => t, _ => return Err("Токен не найден".to_string()) };
     let client = reqwest::Client::builder().user_agent("Mozilla/5.0").build().map_err(|e| e.to_string())?;
-    let res = client.get("https://api.vk.com/method/audio.search").query(&[("access_token", token.as_str()), ("v", "5.131"), ("q", query.as_str()), ("count", "50"), ("offset", &offset.to_string())]).send().await.map_err(|e| e.to_string())?;
+    
+    tokio::time::sleep(tokio::time::Duration::from_millis(350)).await;
+    
+    let res = client.get("https://api.vk.com/method/audio.search").query(&[("access_token", token.as_str()), ("v", "5.199"), ("q", query.as_str()), ("count", "50"), ("offset", &offset.to_string())]).send().await.map_err(|e| e.to_string())?;
     let json: Value = res.json().await.map_err(|e| e.to_string())?;
     if let Some(error) = json.get("error") { return Err(format!("Ошибка ВК: {}", error["error_msg"].as_str().unwrap_or("Неизвестно"))); }
     let items = json["response"]["items"].as_array().ok_or("Нет поля items")?;
@@ -310,7 +316,10 @@ async fn get_my_music(app: tauri::AppHandle, offset: i32) -> Result<Vec<AudioIte
     let _ = app.keyring().initialize_service("com.vkplayer.app".to_string());
     let token = match app.keyring().get("vk_access_token", tauri_plugin_keyring::CredentialType::Password) { Ok(tauri_plugin_keyring::CredentialValue::Password(t)) => t, _ => return Err("Токен не найден".to_string()) };
     let client = reqwest::Client::builder().user_agent("Mozilla/5.0").build().map_err(|e| e.to_string())?;
-    let res = client.get("https://api.vk.com/method/audio.get").query(&[("access_token", token.as_str()), ("v", "5.131"), ("count", "50"), ("offset", &offset.to_string())]).send().await.map_err(|e| e.to_string())?;
+    
+    tokio::time::sleep(tokio::time::Duration::from_millis(350)).await;
+    
+    let res = client.get("https://api.vk.com/method/audio.get").query(&[("access_token", token.as_str()), ("v", "5.199"), ("count", "50"), ("offset", &offset.to_string())]).send().await.map_err(|e| e.to_string())?;
     let json: Value = res.json().await.map_err(|e| e.to_string())?;
     if let Some(error) = json.get("error") { return Err(format!("Ошибка ВК: {}", error["error_msg"].as_str().unwrap_or("Неизвестно"))); }
     let items = json["response"]["items"].as_array().ok_or("Нет поля items")?;
@@ -323,7 +332,10 @@ async fn toggle_favorite(app: tauri::AppHandle, audio_id: i64, owner_id: i64, ad
     let token = match app.keyring().get("vk_access_token", tauri_plugin_keyring::CredentialType::Password) { Ok(tauri_plugin_keyring::CredentialValue::Password(t)) => t, _ => return Err("Токен не найден".to_string()) };
     let client = reqwest::Client::new();
     let method = if add { "audio.add" } else { "audio.delete" };
-    let res = client.get(format!("https://api.vk.com/method/{}", method)).query(&[("access_token", token.as_str()), ("v", "5.131"), ("audio_id", &audio_id.to_string()), ("owner_id", &owner_id.to_string())]).send().await.map_err(|e| e.to_string())?;
+    
+    tokio::time::sleep(tokio::time::Duration::from_millis(350)).await;
+    
+    let res = client.get(format!("https://api.vk.com/method/{}", method)).query(&[("access_token", token.as_str()), ("v", "5.199"), ("audio_id", &audio_id.to_string()), ("owner_id", &owner_id.to_string())]).send().await.map_err(|e| e.to_string())?;
     let json: Value = res.json().await.map_err(|e| e.to_string())?;
     if let Some(error) = json.get("error") { return Err(format!("Ошибка ВК: {}", error["error_msg"].as_str().unwrap_or("Неизвестно"))); }
     Ok(())
@@ -334,10 +346,16 @@ async fn get_playlists(app: tauri::AppHandle) -> Result<Vec<Playlist>, String> {
     let _ = app.keyring().initialize_service("com.vkplayer.app".to_string());
     let token = match app.keyring().get("vk_access_token", tauri_plugin_keyring::CredentialType::Password) { Ok(tauri_plugin_keyring::CredentialValue::Password(t)) => t, _ => return Err("Токен не найден".to_string()) };
     let client = reqwest::Client::builder().user_agent("Mozilla/5.0").build().map_err(|e| e.to_string())?;
-    let user_res = client.get("https://api.vk.com/method/users.get").query(&[("access_token", token.as_str()), ("v", "5.131")]).send().await.map_err(|e| e.to_string())?;
+    
+    tokio::time::sleep(tokio::time::Duration::from_millis(350)).await;
+    
+    let user_res = client.get("https://api.vk.com/method/users.get").query(&[("access_token", token.as_str()), ("v", "5.199")]).send().await.map_err(|e| e.to_string())?;
     let user_json: Value = user_res.json().await.map_err(|e| e.to_string())?;
     let user_id = get_i64(&user_json["response"][0]["id"]).to_string();
-    let res = client.get("https://api.vk.com/method/audio.getPlaylists").query(&[("access_token", token.as_str()), ("v", "5.131"), ("count", "100"), ("owner_id", user_id.as_str())]).send().await.map_err(|e| e.to_string())?;
+
+    tokio::time::sleep(tokio::time::Duration::from_millis(350)).await;
+    
+    let res = client.get("https://api.vk.com/method/audio.getPlaylists").query(&[("access_token", token.as_str()), ("v", "5.199"), ("count", "100"), ("owner_id", user_id.as_str())]).send().await.map_err(|e| e.to_string())?;
     let json: Value = res.json().await.map_err(|e| e.to_string())?;
     if let Some(error) = json.get("error") { return Err(format!("Ошибка ВК: {}", error["error_msg"].as_str().unwrap_or("Неизвестно"))); }
     let mut playlists = Vec::new();
@@ -362,7 +380,10 @@ async fn get_vk_mix(app: tauri::AppHandle, offset: i32, seed_audio: Option<Strin
     let _ = app.keyring().initialize_service("com.vkplayer.app".to_string());
     let token = match app.keyring().get("vk_access_token", tauri_plugin_keyring::CredentialType::Password) { Ok(tauri_plugin_keyring::CredentialValue::Password(t)) => t, _ => return Err("Токен не найден".to_string()) };
     let client = reqwest::Client::builder().user_agent("Mozilla/5.0").build().map_err(|e| e.to_string())?;
-    let mut query: Vec<(&str, String)> = vec![("access_token", token.clone()), ("v", "5.131".to_string()), ("count", "50".to_string())];
+    
+    tokio::time::sleep(tokio::time::Duration::from_millis(350)).await;
+    
+    let mut query: Vec<(&str, String)> = vec![("access_token", token.clone()), ("v", "5.199".to_string()), ("count", "50".to_string())];
     if let Some(seed) = seed_audio { if !seed.is_empty() { query.push(("target_audio", seed)); } else { query.push(("offset", offset.to_string())); } } else { query.push(("offset", offset.to_string())); }
     let res_rec = client.get("https://api.vk.com/method/audio.getRecommendations").query(&query).send().await.map_err(|e| e.to_string())?;
     let json_rec: Value = res_rec.json().await.map_err(|e| e.to_string())?;
@@ -370,7 +391,9 @@ async fn get_vk_mix(app: tauri::AppHandle, offset: i32, seed_audio: Option<Strin
     if let Some(items) = json_rec["response"]["items"].as_array() { recommended_tracks = items.iter().map(parse_track).collect(); }
     let mut playlists = Vec::new();
     if offset == 0 {
-        let res_pl = client.get("https://api.vk.com/method/audio.getPlaylists").query(&[("access_token", token.as_str()), ("v", "5.131"), ("count", "20"), ("mixed", "true")]).send().await.map_err(|e| e.to_string())?;
+        tokio::time::sleep(tokio::time::Duration::from_millis(350)).await;
+        
+        let res_pl = client.get("https://api.vk.com/method/audio.getPlaylists").query(&[("access_token", token.as_str()), ("v", "5.199"), ("count", "20"), ("mixed", "true")]).send().await.map_err(|e| e.to_string())?;
         let json_pl: Value = res_pl.json().await.map_err(|e| e.to_string())?;
         if let Some(items) = json_pl["response"]["items"].as_array() {
             for item in items {
@@ -396,11 +419,16 @@ async fn get_playlist_tracks(app: tauri::AppHandle, owner_id: Option<String>, pl
     let client = reqwest::Client::builder().user_agent("Mozilla/5.0").build().map_err(|e| e.to_string())?;
     let mut final_owner_id = owner_id.unwrap_or_default();
     if final_owner_id.is_empty() || final_owner_id == "undefined" {
-        let user_res = client.get("https://api.vk.com/method/users.get").query(&[("access_token", token.as_str()), ("v", "5.131")]).send().await.map_err(|e| e.to_string())?;
+        tokio::time::sleep(tokio::time::Duration::from_millis(350)).await;
+        
+        let user_res = client.get("https://api.vk.com/method/users.get").query(&[("access_token", token.as_str()), ("v", "5.199")]).send().await.map_err(|e| e.to_string())?;
         let user_json: Value = user_res.json().await.map_err(|e| e.to_string())?;
         final_owner_id = get_i64(&user_json["response"][0]["id"]).to_string();
     }
-    let mut query = vec![("access_token".to_string(), token), ("v".to_string(), "5.131".to_string()), ("owner_id".to_string(), final_owner_id), ("playlist_id".to_string(), playlist_id.clone()), ("count".to_string(), "100".to_string())];
+    
+    tokio::time::sleep(tokio::time::Duration::from_millis(350)).await;
+    
+    let mut query = vec![("access_token".to_string(), token), ("v".to_string(), "5.199".to_string()), ("owner_id".to_string(), final_owner_id), ("playlist_id".to_string(), playlist_id.clone()), ("count".to_string(), "100".to_string())];
     if let Some(key) = access_key { if !key.is_empty() { query.push(("access_key".to_string(), key)); } }
     let res = client.get("https://api.vk.com/method/audio.get").query(&query).send().await.map_err(|e| e.to_string())?;
     let json: Value = res.json().await.map_err(|e| e.to_string())?;
