@@ -1,12 +1,16 @@
 use tauri_plugin_keyring::KeyringExt;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use tauri::{Emitter, Manager};
+use tauri::{Emitter, Manager, WindowEvent};
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 use souvlaki::{MediaControls, PlatformConfig, MediaMetadata, MediaPlayback, MediaControlEvent};
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
 use std::collections::HashMap;
+
+// Импорты для работы с треем и меню
+use tauri::menu::{Menu, MenuItem};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 
 const DISCORD_APP_ID: &str = " you_discord_app_id "; 
 
@@ -444,6 +448,56 @@ pub fn run() {
         .plugin(tauri_plugin_keyring::init())
         .manage(MediaState(Mutex::new(None)))
         .manage(DiscordState(Mutex::new(None)))
+        .setup(|app| {
+            let show_item = MenuItem::with_id(app, "show", "Показать / Скрыть", true, None::<&str>)?;
+            let quit_item = MenuItem::with_id(app, "quit", "Выход", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show_item, &quit_item])?;
+
+            let _tray = TrayIconBuilder::new()
+                .icon(app.default_window_icon().unwrap().clone())
+                .menu(&menu)
+                .show_menu_on_left_click(false)
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            match window.is_visible() {
+                                Ok(true) => { let _ = window.hide(); }
+                                _ => {
+                                    let _ = window.show();
+                                    let _ = window.set_focus();
+                                }
+                            }
+                        }
+                    }
+                })
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "show" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                    "quit" => {
+                        app.exit(0);
+                    }
+                    _ => {}
+                })
+                .build(app)?;
+
+            Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let _ = window.hide();
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             check_auth, save_token, search_music, get_my_music, toggle_favorite, get_playlists, get_vk_mix, get_playlist_tracks,
             init_media_controls, update_media_metadata, set_window_mode, download_track, delete_cached_track, get_cached_files,
